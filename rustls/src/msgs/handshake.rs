@@ -1,4 +1,5 @@
 #![allow(non_camel_case_types)]
+use crate::crypto::CryptoProvider;
 use crate::enums::{CipherSuite, HandshakeType, ProtocolVersion, SignatureScheme};
 use crate::error::InvalidMessage;
 use crate::key;
@@ -85,9 +86,9 @@ impl Codec for Random {
 }
 
 impl Random {
-    pub fn new() -> Result<Self, rand::GetRandomFailed> {
+    pub fn new<C: CryptoProvider>() -> Result<Self, rand::GetRandomFailed> {
         let mut data = [0u8; 32];
-        rand::fill_random(&mut data)?;
+        C::fill_random(&mut data)?;
         Ok(Self(data))
     }
 
@@ -156,9 +157,9 @@ impl Codec for SessionId {
 }
 
 impl SessionId {
-    pub fn random() -> Result<Self, rand::GetRandomFailed> {
+    pub fn random<C: CryptoProvider>() -> Result<Self, rand::GetRandomFailed> {
         let mut data = [0u8; 32];
-        rand::fill_random(&mut data)?;
+        C::fill_random(&mut data)?;
         Ok(Self { data, len: 32 })
     }
 
