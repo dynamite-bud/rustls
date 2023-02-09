@@ -36,8 +36,6 @@ use super::server_conn::ServerConnectionData;
 
 use std::sync::Arc;
 
-use ring::constant_time;
-
 pub(super) use client_hello::CompleteClientHelloHandling;
 
 mod client_hello {
@@ -125,7 +123,7 @@ mod client_hello {
             let real_binder =
                 key_schedule.resumption_psk_binder_key_and_sign_verify_data(&handshake_hash);
 
-            constant_time::verify_slices_are_equal(real_binder.as_ref(), binder).is_ok()
+            C::verify_equal_ct(real_binder.as_ref(), binder)
         }
 
         fn attempt_tls13_ticket_decryption(
@@ -1175,13 +1173,14 @@ impl<C: CryptoProvider> State<ServerConnectionData> for ExpectFinished<C> {
             .key_schedule
             .sign_client_finish(&handshake_hash, cx.common);
 
-        let fin = constant_time::verify_slices_are_equal(expect_verify_data.as_ref(), &finished.0)
-            .map_err(|_| {
-                warn!("Finished wrong");
-                cx.common
-                    .send_fatal_alert(AlertDescription::DecryptError, Error::DecryptError)
-            })
-            .map(|_| verify::FinishedMessageVerified::assertion())?;
+        let fin = match C::verify_equal_ct(expect_verify_data.as_ref(), &finished.0) {
+            true => verify::FinishedMessageVerified::assertion(),
+            false => {
+                return Err(cx
+                    .common
+                    .send_fatal_alert(AlertDescription::DecryptError, Error::DecryptError));
+            }
+        };
 
         // nb. future derivations include Client Finished, but not the
         // main application data keying.
