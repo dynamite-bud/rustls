@@ -39,7 +39,7 @@ use std::sync::Arc;
 pub(super) use client_hello::CompleteClientHelloHandling;
 
 mod client_hello {
-    use crate::crypto::ring::KeyExchange;
+    use crate::crypto::{KeyExchange, SupportedGroup};
     use crate::enums::SignatureScheme;
     use crate::msgs::base::{Payload, PayloadU8};
     use crate::msgs::ccs::ChangeCipherSpecPayload;
@@ -75,7 +75,7 @@ mod client_hello {
         Accepted,
     }
 
-    pub(in crate::server) struct CompleteClientHelloHandling<C> {
+    pub(in crate::server) struct CompleteClientHelloHandling<C: CryptoProvider> {
         pub(in crate::server) config: Arc<ServerConfig<C>>,
         pub(in crate::server) transcript: HandshakeHash,
         pub(in crate::server) suite: &'static Tls13CipherSuite,
@@ -206,7 +206,7 @@ mod client_hello {
                 .find_map(|group| {
                     shares_ext
                         .iter()
-                        .find(|share| share.group == group.name)
+                        .find(|share| share.group == group.name())
                 });
 
             let chosen_share = match chosen_share {
@@ -218,7 +218,7 @@ mod client_hello {
                         .config
                         .kx_groups
                         .iter()
-                        .find(|group| groups_ext.contains(&group.name))
+                        .find(|group| groups_ext.contains(&group.name()))
                         .cloned();
 
                     self.transcript.add_message(chm);
@@ -235,7 +235,7 @@ mod client_hello {
                             &mut self.transcript,
                             self.suite,
                             cx.common,
-                            group.name,
+                            group.name(),
                         );
                         emit_fake_ccs(cx.common);
 
@@ -475,7 +475,7 @@ mod client_hello {
         }
     }
 
-    fn emit_server_hello<C>(
+    fn emit_server_hello<C: CryptoProvider>(
         transcript: &mut HandshakeHash,
         randoms: &ConnectionRandoms,
         suite: &'static Tls13CipherSuite,
@@ -489,8 +489,11 @@ mod client_hello {
         let mut extensions = Vec::new();
 
         // Prepare key exchange; the caller ascertained that the `share.group` is supported
-        let kx = KeyExchange::choose(share.group, &config.kx_groups)
-            .map_err(|_| Error::FailedToGetRandomBytes)?;
+        let kx = <<C as CryptoProvider>::KeyExchange as KeyExchange>::choose(
+            share.group,
+            &config.kx_groups,
+        )
+        .map_err(|_| Error::FailedToGetRandomBytes)?;
 
         let kse = KeyShareEntry::new(share.group, kx.pub_key());
         extensions.push(ServerExtension::KeyShare(kse));
@@ -599,7 +602,7 @@ mod client_hello {
         common.send_msg(m, false);
     }
 
-    fn decide_if_early_data_allowed<C>(
+    fn decide_if_early_data_allowed<C: CryptoProvider>(
         cx: &mut ServerContext<'_>,
         client_hello: &ClientHelloPayload,
         resumedata: Option<&persist::ServerSessionValue>,
@@ -659,7 +662,7 @@ mod client_hello {
         }
     }
 
-    fn emit_encrypted_extensions<C>(
+    fn emit_encrypted_extensions<C: CryptoProvider>(
         transcript: &mut HandshakeHash,
         suite: &'static Tls13CipherSuite,
         cx: &mut ServerContext<'_>,
@@ -700,7 +703,7 @@ mod client_hello {
         Ok(early_data)
     }
 
-    fn emit_certificate_req_tls13<C>(
+    fn emit_certificate_req_tls13<C: CryptoProvider>(
         transcript: &mut HandshakeHash,
         cx: &mut ServerContext<'_>,
         config: &ServerConfig<C>,
@@ -829,7 +832,7 @@ mod client_hello {
         Ok(())
     }
 
-    fn emit_finished_tls13<C>(
+    fn emit_finished_tls13<C: CryptoProvider>(
         transcript: &mut HandshakeHash,
         randoms: &ConnectionRandoms,
         cx: &mut ServerContext<'_>,
@@ -864,7 +867,7 @@ mod client_hello {
     }
 }
 
-struct ExpectAndSkipRejectedEarlyData<C> {
+struct ExpectAndSkipRejectedEarlyData<C: CryptoProvider> {
     skip_data_left: usize,
     next: Box<hs::ExpectClientHello<C>>,
 }
@@ -886,7 +889,7 @@ impl<C: CryptoProvider> State<ServerConnectionData> for ExpectAndSkipRejectedEar
     }
 }
 
-struct ExpectCertificate<C> {
+struct ExpectCertificate<C: CryptoProvider> {
     config: Arc<ServerConfig<C>>,
     transcript: HandshakeHash,
     suite: &'static Tls13CipherSuite,
@@ -958,7 +961,7 @@ impl<C: CryptoProvider> State<ServerConnectionData> for ExpectCertificate<C> {
     }
 }
 
-struct ExpectCertificateVerify<C> {
+struct ExpectCertificateVerify<C: CryptoProvider> {
     config: Arc<ServerConfig<C>>,
     transcript: HandshakeHash,
     suite: &'static Tls13CipherSuite,
@@ -1008,7 +1011,7 @@ impl<C: CryptoProvider> State<ServerConnectionData> for ExpectCertificateVerify<
 // --- Process (any number of) early ApplicationData messages,
 //     followed by a terminating handshake EndOfEarlyData message ---
 
-struct ExpectEarlyData<C> {
+struct ExpectEarlyData<C: CryptoProvider> {
     config: Arc<ServerConfig<C>>,
     transcript: HandshakeHash,
     suite: &'static Tls13CipherSuite,
@@ -1089,7 +1092,7 @@ fn get_server_session_value(
     )
 }
 
-struct ExpectFinished<C> {
+struct ExpectFinished<C: CryptoProvider> {
     config: Arc<ServerConfig<C>>,
     transcript: HandshakeHash,
     suite: &'static Tls13CipherSuite,
