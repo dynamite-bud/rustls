@@ -1,4 +1,3 @@
-use crate::cipher::{MessageDecrypter, MessageEncrypter};
 use crate::common_state::{CommonState, Side};
 use crate::conn::ConnectionRandoms;
 use crate::crypto;
@@ -6,6 +5,7 @@ use crate::enums::{AlertDescription, CipherSuite, SignatureScheme};
 use crate::error::{Error, InvalidMessage};
 use crate::msgs::codec::{Codec, Reader};
 use crate::msgs::handshake::KeyExchangeAlgorithm;
+use crate::provider::cipher::{MessageDecrypter, MessageEncrypter};
 use crate::suites::{BulkAlgorithm, CipherSuiteCommon, SupportedCipherSuite};
 #[cfg(feature = "secret_extraction")]
 use crate::suites::{ConnectionTrafficSecrets, PartiallyExtractedSecrets};

@@ -1,7 +1,7 @@
-use crate::cipher::{Iv, IvLen, MessageDecrypter};
 use crate::common_state::{CommonState, Side};
 use crate::error::Error;
 use crate::msgs::base::PayloadU8;
+use crate::provider::cipher::{Iv, IvLen, MessageDecrypter};
 #[cfg(feature = "quic")]
 use crate::quic;
 #[cfg(feature = "secret_extraction")]

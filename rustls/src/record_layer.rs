@@ -1,6 +1,6 @@
-use crate::cipher::{MessageDecrypter, MessageEncrypter};
 use crate::error::Error;
 use crate::msgs::message::{BorrowedPlainMessage, OpaqueMessage, PlainMessage};
+use crate::provider::cipher::{MessageDecrypter, MessageEncrypter};
 
 #[cfg(feature = "logging")]
 use crate::log::trace;
