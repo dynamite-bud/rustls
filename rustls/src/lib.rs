@@ -342,6 +342,7 @@ mod enums;
 mod key;
 mod key_log;
 mod key_log_file;
+mod ring;
 mod suites;
 mod ticketer;
 mod versions;
