@@ -321,6 +321,7 @@ mod conn;
 pub mod crypto;
 mod error;
 mod hash_hs;
+mod hkdf;
 mod limited_cache;
 mod provider;
 mod rand;

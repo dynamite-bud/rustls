@@ -17,6 +17,10 @@ impl provider::hmac::Hmac for Hmac {
     fn open_key(&self, key: &[u8]) -> Box<dyn provider::hmac::Key> {
         Box::new(Key(ring::hmac::Key::new(*self.0, key)))
     }
+
+    fn hash_output_len(&self) -> usize {
+        self.0.digest_algorithm().output_len
+    }
 }
 
 struct Key(ring::hmac::Key);

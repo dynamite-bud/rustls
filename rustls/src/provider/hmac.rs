@@ -1,5 +1,6 @@
 pub(crate) trait Hmac: Send + Sync {
     fn open_key(&self, key: &[u8]) -> Box<dyn Key>;
+    fn hash_output_len(&self) -> usize;
 }
 
 /// Maximum support HMAC tag size: supports up to SHA512.
