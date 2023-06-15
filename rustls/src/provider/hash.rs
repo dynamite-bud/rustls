@@ -2,6 +2,7 @@ use crate::msgs::enums::HashAlgorithm;
 
 pub(crate) trait Hash: Send + Sync {
     fn algorithm(&self) -> HashAlgorithm;
+    fn output_len(&self) -> usize;
     fn start(&self) -> Box<dyn Context>;
 }
 

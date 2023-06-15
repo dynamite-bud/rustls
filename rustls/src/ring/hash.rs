@@ -18,6 +18,10 @@ impl provider::hash::Hash for Hash {
         self.1
     }
 
+    fn output_len(&self) -> usize {
+        self.0.output_len
+    }
+
     fn start(&self) -> Box<dyn provider::hash::Context> {
         Box::new(Context(ring::digest::Context::new(self.0)))
     }

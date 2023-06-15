@@ -2,7 +2,7 @@
 
 use crate::provider::{hash, hmac};
 
-struct Extractor {
+pub(crate) struct Extractor {
     salt: Box<dyn hmac::Key>,
     hmac: &'static dyn hmac::Hmac,
 }
@@ -33,9 +33,24 @@ impl Extractor {
 
 pub(crate) struct OutputLengthError;
 
+/// This is a PRK ready for use via `expand()` et al.
 pub(crate) struct Expander(Box<dyn hmac::Key>);
 
+/// This is a single block output from HKDF-Expand.
+#[derive(Clone)]
+pub(crate) struct OkmOneBlock(hmac::Tag);
+
+impl AsRef<[u8]> for OkmOneBlock {
+    fn as_ref(&self) -> &[u8] {
+        self.0.as_ref()
+    }
+}
+
 impl Expander {
+    pub(crate) fn from_okm(okm: &OkmOneBlock, hmac: &'static dyn hmac::Hmac) -> Self {
+        Self(hmac.open_key(okm.0.as_ref()))
+    }
+
     fn expand_unchecked(&self, info: &[&[u8]], output: &mut [u8]) {
         fn t_n(expander: &Expander, t_previous: &[u8], info: &[&[u8]], n: u8) -> hmac::Tag {
             let mut context = expander.0.start().update(t_previous);
@@ -56,6 +71,10 @@ impl Expander {
             term = t_n(self, term.as_ref(), info, (n + 1) as u8);
             chunk.copy_from_slice(&term.as_ref()[..chunk.len()]);
         }
+    }
+
+    pub(crate) fn one_block_len(&self) -> usize {
+        self.0.tag_len()
     }
 
     pub(crate) fn expand_slice(
@@ -79,6 +98,13 @@ impl Expander {
         let mut output = [0u8; N];
         self.expand_unchecked(info, &mut output);
         T::from(output)
+    }
+
+    pub(crate) fn expand_one_block(&self, info: &[&[u8]]) -> OkmOneBlock {
+        let mut tag = [0u8; hmac::HMAC_MAX_TAG];
+        let reduced_tag = &mut tag[..self.0.tag_len()];
+        self.expand_unchecked(info, reduced_tag);
+        OkmOneBlock(hmac::Tag::new(reduced_tag))
     }
 }
 

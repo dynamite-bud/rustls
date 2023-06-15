@@ -5,6 +5,7 @@ use crate::msgs::base::Payload;
 use crate::msgs::codec::Codec;
 use crate::msgs::fragmenter::MAX_FRAGMENT_LEN;
 use crate::msgs::message::{BorrowedPlainMessage, OpaqueMessage, PlainMessage};
+use crate::provider;
 use crate::provider::cipher::{make_nonce, Iv, MessageDecrypter, MessageEncrypter};
 use crate::suites::{CipherSuiteCommon, SupportedCipherSuite};
 
@@ -23,7 +24,7 @@ pub(crate) static TLS13_CHACHA20_POLY1305_SHA256_INTERNAL: &Tls13CipherSuite = &
         suite: CipherSuite::TLS13_CHACHA20_POLY1305_SHA256,
         hash_provider: &crate::ring::hash::SHA256,
     },
-    hkdf_algorithm: ring::hkdf::HKDF_SHA256,
+    hmac_provider: &crate::ring::hmac::HMAC_SHA256,
     aead_algorithm: &ring::aead::CHACHA20_POLY1305,
     #[cfg(feature = "quic")]
     confidentiality_limit: u64::MAX,
@@ -38,7 +39,7 @@ pub static TLS13_AES_256_GCM_SHA384: SupportedCipherSuite =
             suite: CipherSuite::TLS13_AES_256_GCM_SHA384,
             hash_provider: &crate::ring::hash::SHA384,
         },
-        hkdf_algorithm: ring::hkdf::HKDF_SHA384,
+        hmac_provider: &crate::ring::hmac::HMAC_SHA384,
         aead_algorithm: &ring::aead::AES_256_GCM,
         #[cfg(feature = "quic")]
         confidentiality_limit: 1 << 23,
@@ -55,7 +56,7 @@ pub(crate) static TLS13_AES_128_GCM_SHA256_INTERNAL: &Tls13CipherSuite = &Tls13C
         suite: CipherSuite::TLS13_AES_128_GCM_SHA256,
         hash_provider: &crate::ring::hash::SHA256,
     },
-    hkdf_algorithm: ring::hkdf::HKDF_SHA256,
+    hmac_provider: &crate::ring::hmac::HMAC_SHA256,
     aead_algorithm: &ring::aead::AES_128_GCM,
     #[cfg(feature = "quic")]
     confidentiality_limit: 1 << 23,
@@ -67,7 +68,7 @@ pub(crate) static TLS13_AES_128_GCM_SHA256_INTERNAL: &Tls13CipherSuite = &Tls13C
 pub struct Tls13CipherSuite {
     /// Common cipher suite fields.
     pub common: CipherSuiteCommon,
-    pub(crate) hkdf_algorithm: ring::hkdf::Algorithm,
+    pub(crate) hmac_provider: &'static dyn provider::hmac::Hmac,
     pub(crate) aead_algorithm: &'static ring::aead::Algorithm,
     #[cfg(feature = "quic")]
     pub(crate) confidentiality_limit: u64,
@@ -76,13 +77,6 @@ pub struct Tls13CipherSuite {
 }
 
 impl Tls13CipherSuite {
-    /// Which hash function to use with this suite.
-    pub fn hash_algorithm(&self) -> &'static ring::digest::Algorithm {
-        self.hkdf_algorithm
-            .hmac_algorithm()
-            .digest_algorithm()
-    }
-
     /// Can a session using suite self resume from suite prev?
     pub fn can_resume_from(&self, prev: &'static Self) -> Option<&'static Self> {
         (prev.common.hash_provider.algorithm() == self.common.hash_provider.algorithm())

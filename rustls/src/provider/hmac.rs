@@ -4,9 +4,10 @@ pub(crate) trait Hmac: Send + Sync {
 }
 
 /// Maximum support HMAC tag size: supports up to SHA512.
-const HMAC_MAX_TAG: usize = 64;
+pub(crate) const HMAC_MAX_TAG: usize = 64;
 
 /// A HMAC tag, stored as a value.
+#[derive(Clone)]
 pub struct Tag {
     buf: [u8; HMAC_MAX_TAG],
     used: usize,
@@ -29,7 +30,7 @@ impl AsRef<[u8]> for Tag {
     }
 }
 
-pub(crate) trait Key {
+pub(crate) trait Key: Send + Sync {
     /// Calculates a tag over `data`.
     fn one_shot(&self, data: &[u8]) -> Tag;
 

@@ -10,8 +10,7 @@ use crate::log::{debug, trace, warn};
 use crate::msgs::base::PayloadU16;
 use crate::msgs::codec::{Codec, Reader};
 use crate::msgs::handshake::DistinguishedName;
-
-use ring::digest::Digest;
+use crate::provider::hash;
 
 use std::sync::Arc;
 use std::time::SystemTime;
@@ -818,17 +817,17 @@ fn convert_alg_tls13(
 }
 
 /// Constructs the signature message specified in section 4.4.3 of RFC8446.
-pub(crate) fn construct_tls13_client_verify_message(handshake_hash: &Digest) -> Vec<u8> {
+pub(crate) fn construct_tls13_client_verify_message(handshake_hash: &hash::Output) -> Vec<u8> {
     construct_tls13_verify_message(handshake_hash, b"TLS 1.3, client CertificateVerify\x00")
 }
 
 /// Constructs the signature message specified in section 4.4.3 of RFC8446.
-pub(crate) fn construct_tls13_server_verify_message(handshake_hash: &Digest) -> Vec<u8> {
+pub(crate) fn construct_tls13_server_verify_message(handshake_hash: &hash::Output) -> Vec<u8> {
     construct_tls13_verify_message(handshake_hash, b"TLS 1.3, server CertificateVerify\x00")
 }
 
 fn construct_tls13_verify_message(
-    handshake_hash: &Digest,
+    handshake_hash: &hash::Output,
     context_string_with_0: &[u8],
 ) -> Vec<u8> {
     let mut msg = Vec::new();
