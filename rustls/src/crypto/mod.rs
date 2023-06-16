@@ -17,9 +17,6 @@ pub trait CryptoProvider: Send + Sync + 'static {
 
     /// Fill the given buffer with random bytes.
     fn fill_random(buf: &mut [u8]) -> Result<(), GetRandomFailed>;
-
-    /// Verify that the two input slices are equal, in constant time.
-    fn verify_equal_ct(a: &[u8], b: &[u8]) -> bool;
 }
 
 /// An in-progress key exchange over a [SupportedGroup].

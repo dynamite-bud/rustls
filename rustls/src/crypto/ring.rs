@@ -6,7 +6,6 @@ use crate::server::ProducesTickets;
 
 use ring::aead;
 use ring::agreement::{agree_ephemeral, EphemeralPrivateKey, UnparsedPublicKey};
-use ring::constant_time;
 use ring::rand::{SecureRandom, SystemRandom};
 
 use std::fmt;
@@ -36,10 +35,6 @@ impl CryptoProvider for Ring {
         SystemRandom::new()
             .fill(buf)
             .map_err(|_| GetRandomFailed)
-    }
-
-    fn verify_equal_ct(a: &[u8], b: &[u8]) -> bool {
-        constant_time::verify_slices_are_equal(a, b).is_ok()
     }
 }
 

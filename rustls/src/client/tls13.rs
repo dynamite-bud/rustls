@@ -42,6 +42,8 @@ use crate::client::common::ServerCertDetails;
 use crate::client::common::{ClientAuthDetails, ClientHelloDetails};
 use crate::client::{hs, ClientConfig, ClientSessionStore, ServerName};
 
+use ring::constant_time;
+
 use std::sync::Arc;
 
 // Extensions we expect in plaintext in the ServerHello.
@@ -852,14 +854,12 @@ impl<C: CryptoProvider> State<ClientConnectionData> for ExpectFinished<C> {
             .key_schedule
             .sign_server_finish(&handshake_hash);
 
-        let fin = match C::verify_equal_ct(expect_verify_data.as_ref(), &finished.0) {
-            true => verify::FinishedMessageVerified::assertion(),
-            false => {
-                return Err(cx
-                    .common
-                    .send_fatal_alert(AlertDescription::DecryptError, Error::DecryptError));
-            }
-        };
+        let fin = constant_time::verify_slices_are_equal(expect_verify_data.as_ref(), &finished.0)
+            .map_err(|_| {
+                cx.common
+                    .send_fatal_alert(AlertDescription::DecryptError, Error::DecryptError)
+            })
+            .map(|_| verify::FinishedMessageVerified::assertion())?;
 
         st.transcript.add_message(&m);
 
