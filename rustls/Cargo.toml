@@ -16,10 +16,16 @@ build = "build.rs"
 rustversion = { version = "1.0.6", optional = true }
 
 [dependencies]
-log = { version = "0.4.4", optional = true }
 ring = "0.16.20"
+
+
+log = { version = "0.4.4", optional = true }
 sct = "0.7.0"
-webpki = { package = "rustls-webpki", version = "0.100.0", features = ["alloc", "std"] }
+webpki = { package = "rustls-webpki", version = "0.100.0", features = [
+    "alloc",
+    "std",
+] }
+
 
 [features]
 default = ["logging", "tls12"]
@@ -55,3 +61,6 @@ harness = false
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+# [patch.crates-io]
+# ring = { path = "/Volumes/Work/Projects/Wasmer/ring-wasi" }

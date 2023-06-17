@@ -542,11 +542,11 @@ mod client_hello {
 
         // Do key exchange
         let key_schedule = kx.complete(&share.payload.0, |secret| {
-            Ok(key_schedule_pre_handshake.into_handshake(secret))
-        })?;
+            key_schedule_pre_handshake.into_handshake(secret)
+        });
 
         let handshake_hash = transcript.get_current_hash();
-        let key_schedule = key_schedule.derive_server_handshake_secrets(
+        let key_schedule = key_schedule?.derive_server_handshake_secrets(
             handshake_hash,
             &*config.key_log,
             &randoms.client,
