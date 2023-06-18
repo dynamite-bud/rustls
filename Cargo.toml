@@ -9,5 +9,5 @@ exclude = ["admin/rustfmt"]
 resolver = "2"
 
 [patch.crates-io]
-ring = { path = "/Volumes/Work/Projects/Wasmer/ring-wasi" }
+ring = { path = "/Volumes/Work/Projects/Wasmer/ring" }
 mio = { git = "https://github.com/wasix-org/mio.git", branch = "wasix" }
