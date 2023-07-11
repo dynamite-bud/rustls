@@ -58,5 +58,6 @@ fn main() {
     .unwrap();
     let mut plaintext = Vec::new();
     tls.read_to_end(&mut plaintext).unwrap();
+    println!("plaintext: {:?}", plaintext);
     stdout().write_all(&plaintext).unwrap();
 }

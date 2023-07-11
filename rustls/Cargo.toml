@@ -61,6 +61,3 @@ harness = false
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
-
-# [patch.crates-io]
-# ring = { path = "/Volumes/Work/Projects/Wasmer/ring-wasi" }
